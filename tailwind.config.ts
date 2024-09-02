@@ -1,10 +1,12 @@
-import type { Config } from 'tailwindcss';
-
-export default {
-  content: ['./app/**/*.{ts,tsx}', './content/**/*.mdx', './public/**/*.svg'],
-  theme: {},
-  future: {
-    hoverOnlyWhenSupported: true,
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {},
   },
   plugins: [],
-} satisfies Config;
+}

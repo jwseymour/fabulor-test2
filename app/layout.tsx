@@ -1,10 +1,12 @@
 import './globals.css';
-
 import { GeistSans } from 'geist/font/sans';
+import { NavBar } from '@/components/NavBar';
+import { Footer } from "@/components/Footer";
+import { auth } from '@/lib/auth';
 
-let title = 'Next.js + Postgres Auth Starter';
+let title = 'Fabulor - Unleash Your Imagination';
 let description =
-  'This is a Next.js starter kit that uses NextAuth.js for simple email + password login and a Postgres database to persist the data.';
+  'Fabulor is a platform for storytellers to share their creativity and connect with readers from around the world.';
 
 export const metadata = {
   title,
@@ -14,17 +16,40 @@ export const metadata = {
     title,
     description,
   },
-  metadataBase: new URL('https://nextjs-postgres-auth.vercel.app'),
+  metadataBase: new URL('https://fabulor.vercel.app'),
 };
 
-export default function RootLayout({
+type NavItem = 
+  | { label: string; href: string }
+  | { label: string; action: 'login' | 'logout' };
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
+  const navItems: NavItem[] = [
+    { label: "Explore", href: "#" },
+    { label: "Write", href: "#" },
+    { label: "Community", href: "#" },
+    { label: "About", href: "#" },
+  ];
+  
+  if (session?.user) {
+    navItems.push({ label: "Log Out", action: 'logout' });
+  } else {
+    navItems.push({ label: "Log In", action: 'login' });
+  }
+
   return (
     <html lang="en">
-      <body className={GeistSans.variable}>{children}</body>
+      <body className={GeistSans.variable}>
+        <NavBar navItems={navItems} />
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }
