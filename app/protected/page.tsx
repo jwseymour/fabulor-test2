@@ -1,12 +1,18 @@
-import { auth, signOut } from '@/lib/auth';
+import { auth } from '@/lib/auth';
+import { FileList } from '@/components/FileList';
 
 export default async function ProtectedPage() {
-  let session = await auth();
+  const session = await auth();
+
+  if (!session?.user) {
+    return <div>Please log in to view this page.</div>;
+  }
 
   return (
-    <div className="flex h-screen bg-black">
-      <div className="w-screen h-screen flex flex-col space-y-5 justify-center items-center text-white">
-        You are logged in as {session?.user?.email}
+    <div className="flex flex-col h-screen bg-gray-100">
+      <div className="w-full max-w-4xl mx-auto p-8">
+        <h1 className="text-2xl font-bold mb-4">Your Files</h1>
+        <FileList userId={session.user.id} />
       </div>
     </div>
   );

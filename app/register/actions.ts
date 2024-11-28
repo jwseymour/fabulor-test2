@@ -1,6 +1,7 @@
 'use server'
 
 import { createUser, getUserFromEmail, getUserFromUsername } from '@/lib/db';
+import { createUserFolder } from '@/lib/s3';
 import { redirect } from 'next/navigation';
 
 export async function registerAction(formData: FormData) {
@@ -25,6 +26,7 @@ export async function registerAction(formData: FormData) {
     return { error: 'Username already taken' };
   }
 
-  await createUser(username, email, password)
+  const user = await createUser(username, email, password)
+  await createUserFolder(user.id.toString())
   redirect('/login')
 }

@@ -23,9 +23,24 @@ export const {
         }
         if (!user) return null
         const passwordsMatch = await compare(password, user.password)
-        if (passwordsMatch) return { id: user.id.toString(), email: user.email, name: user.username }
+        if (passwordsMatch) return { id: user.id.toString(), email: user.email, username: user.username }
         return null
       },
     }),
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.username = user.username
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub
+        session.user.username = token.username as string
+      }
+      return session
+    },
+  },
 })
