@@ -19,7 +19,7 @@ export default function Login() {
             'use server';
             try {
               await signIn('credentials', {
-                redirectTo: '/protected',
+                redirectTo: '/dashboard',
                 email: formData.get('email') as string,
                 password: formData.get('password') as string,
                 redirect: false,
@@ -27,7 +27,7 @@ export default function Login() {
             } catch (error) {
               return { error: 'Invalid credentials' };
             }
-            redirect('/protected')
+            redirect('/dashboard')
           }}
         >
           <SubmitButton>Sign in</SubmitButton>

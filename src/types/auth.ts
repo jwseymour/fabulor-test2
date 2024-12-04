@@ -36,9 +36,10 @@ export interface AuthUser {
     | { label: string; href: string }
     | { label: string; action: 'login' | 'logout' };
   
-  export interface NavBarProps {
-    navItems: NavItem[];
-  }
+    export interface NavBarProps {
+      navItems: NavItem[];
+      homeLink: string;
+    }
   
   // Response Types
   export interface AuthResponse {

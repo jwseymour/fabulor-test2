@@ -9,7 +9,7 @@ import Link from "next/link"
 import { signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
-export function NavBar({ navItems }: NavBarProps) {
+export function NavBar({ navItems, homeLink }: NavBarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
 
@@ -62,7 +62,7 @@ export function NavBar({ navItems }: NavBarProps) {
 
   return (
     <header className="px-4 lg:px-6 h-14 flex items-center">
-      <Link className="flex items-center justify-center" href="/">
+      <Link className="flex items-center justify-center" href={homeLink}>
         <BookOpen className="h-6 w-6 text-primary" />
         <span className="ml-2 text-2xl font-bold text-primary">Fabulor</span>
       </Link>

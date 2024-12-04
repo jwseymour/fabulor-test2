@@ -29,24 +29,27 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+  const homeLink = session?.user ? '/dashboard' : '/';
 
-  const navItems: NavItem[] = [
-    { label: "Explore", href: "#" },
-    { label: "Write", href: "#" },
-    { label: "Community", href: "#" },
-    { label: "About", href: "#" },
-  ];
-  
-  if (session?.user) {
-    navItems.push({ label: "Log Out", action: 'logout' });
-  } else {
-    navItems.push({ label: "Log In", action: 'login' });
-  }
+  const navItems: NavItem[] = session?.user 
+  ? [
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Files", href: "/files" },
+      { label: "Stories", href: "#" },
+      { label: "Profile", href: "#" },
+      { label: "Log Out", action: 'logout' }
+    ]
+  : [
+      { label: "Features", href: "#features" },
+      { label: "About", href: "#about" },
+      { label: "Community", href: "#community" },
+      { label: "Log In", action: 'login' }
+    ];
 
   return (
     <html lang="en">
       <body className={GeistSans.variable}>
-        <NavBar navItems={navItems} />
+        <NavBar navItems={navItems} homeLink={homeLink}/>
         {children}
         <Footer />
       </body>
