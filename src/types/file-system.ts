@@ -10,7 +10,13 @@ export interface File {
     isFolder: boolean;
     children: FileNode[];
   }
-  
+
+  export interface FileState {
+    name: string;
+    content: string;
+    date: string;
+  }
+
   // Operation Types
   export interface FileOperation {
     userId: string;
@@ -61,11 +67,13 @@ export interface File {
     currentName: string;
     isFolder: boolean;
   }
-  
-  // State Types
-  export interface FileState {
-    name: string;
-    content: string;
+
+  export interface SaveDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSave: () => Promise<void>;
+    onDiscard: () => void;
+    currentFileName: string;
   }
   
   export interface ItemToModify {

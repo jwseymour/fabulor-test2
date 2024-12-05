@@ -10,11 +10,8 @@ export default async function ProtectedPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      <div className="w-full max-w-4xl mx-auto p-8">
-        <h1 className="text-2xl font-bold mb-4">Your Files</h1>
-        <FileList userId={session.user.id} />
-      </div>
+    <div className="h-[calc(100vh-4rem)] bg-white">
+      <FileList userId={session.user.id} />
     </div>
   );
 }

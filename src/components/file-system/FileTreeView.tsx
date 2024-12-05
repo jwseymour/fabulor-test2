@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, FileIcon, FolderIcon, MoreHorizontal } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronLeft, FileIcon, FolderIcon, MoreHorizontal } from 'lucide-react';
 import { getSignedDownloadUrl, saveFileContent, createFolder, deleteFile, deleteFolder, renameFile, renameFolder } from '@/lib/s3/operations';
 import { TextEditor } from './TextEditor';
 import { NewFileDialog } from './dialogs/NewFileDialog';
 import { NewFolderDialog } from './dialogs/NewFolderDialog';
 import { DeleteConfirmDialog } from './dialogs/DeleteConfirmDialog';
 import { RenameDialog } from './dialogs/RenameDialog';
+import { SaveDialog } from './dialogs/SaveDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
@@ -35,7 +36,11 @@ async function fetchFileContent(userId: string, fileName: string): Promise<strin
 
 export function FileTreeView({ fileTree, userId }: { fileTree: FileNode[], userId: string }) {
   const router = useRouter();
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [selectedFile, setSelectedFile] = useState<FileState | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [pendingFileSelection, setPendingFileSelection] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [selectedPath, setSelectedPath] = useState<string>('');
@@ -69,11 +74,20 @@ export function FileTreeView({ fileTree, userId }: { fileTree: FileNode[], userI
   };
 
   const handleFileClick = async (fileName: string) => {
+    if (hasUnsavedChanges) {
+      setPendingFileSelection(fileName);
+      setShowSaveDialog(true);
+      return;
+    }
+    await loadFile(fileName);
+  };
+
+  const loadFile = async (fileName: string) => {
     if (isTextFile(fileName)) {
       setIsLoading(true);
       try {
         const content = await fetchFileContent(userId, fileName);
-        setSelectedFile({ name: fileName, content });
+        setSelectedFile({ name: fileName, content, date: selectedFile?.date || new Date().toISOString().split('T')[0] });
       } catch (error) {
         console.error('Error loading file:', error);
       } finally {
@@ -150,13 +164,28 @@ export function FileTreeView({ fileTree, userId }: { fileTree: FileNode[], userI
     }
   };
 
+  const handleSaveDialogAction = async (shouldSave: boolean) => {
+    if (shouldSave && selectedFile) {
+      const metadataContent = `---\ndate: ${selectedFile.date}\n---\n\n${selectedFile.content}`;
+      await handleSave(metadataContent);
+    }
+    setShowSaveDialog(false);
+    if (pendingFileSelection) {
+      await loadFile(pendingFileSelection);
+      setPendingFileSelection(null);
+    }
+    setHasUnsavedChanges(false);
+  };
+
   const handleCreateFile = async (fileName: string) => {
     const existingNames = getExistingNamesInPath(selectedPath);
     if (existingNames.has(fileName)) {
       throw new Error('A file with this name already exists in this location');
     }
     const newPath = selectedPath ? `${selectedPath}/${fileName}` : fileName;
-    await saveFileContent(userId, newPath, '');
+    const currentDate = new Date().toISOString().split('T')[0];
+    const initialContent = `---\ndate: ${currentDate}\n---\n\n`;
+    await saveFileContent(userId, newPath, initialContent);
     setShowNewFileDialog(false);
     router.refresh();
   };
@@ -182,10 +211,17 @@ export function FileTreeView({ fileTree, userId }: { fileTree: FileNode[], userI
     setExpandedFolders(newExpandedFolders);
   };
 
-  const handleSave = async (content: string) => {
+  const handleSave = async (content: string, newFileName?: string, newDate?: string) => {
     if (selectedFile) {
-      await saveFileContent(userId, selectedFile.name, content);
-      setSelectedFile({ ...selectedFile, content });
+      const fileName = newFileName || selectedFile.name;
+      if (newFileName && newFileName !== selectedFile.name) {
+        await renameFile(userId, selectedFile.name, newFileName);
+      }
+      await saveFileContent(userId, fileName, content);
+      setSelectedFile({ name: fileName, content, date: selectedFile?.date });
+      if (newFileName) {
+        router.refresh();
+      }
     }
   };
 
@@ -201,61 +237,63 @@ export function FileTreeView({ fileTree, userId }: { fileTree: FileNode[], userI
       <div key={currentPath}>
         <div 
           className={`
-            group flex items-center py-1 px-2 hover:bg-gray-100 cursor-pointer
-            ${selectedFile?.name === currentPath ? 'bg-blue-100' : ''}
-            ${selectedPath === currentPath ? 'bg-gray-100' : ''}
+            group flex items-center py-1.5 px-2 cursor-pointer
+            hover:bg-[#E6F0FF] rounded-sm
+            ${selectedFile?.name === currentPath ? 'bg-[#E6F0FF]' : ''}
+            ${selectedPath === currentPath ? 'bg-[#F0F0F0]' : ''}
           `}
-          style={{ paddingLeft: `${level * 20}px` }}
+          style={{ paddingLeft: `${level * 16 + 8}px` }}
           onClick={() => handleRowClick(currentPath, node.isFolder)}
         >
           {node.isFolder && (
-            <div className="p-1 hover:bg-gray-200 rounded-sm mr-1">
+            <div className="p-1 hover:bg-[#D1E3FF] rounded-sm">
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-3.5 w-3.5 text-[#2B579A]" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-gray-500" />
+                <ChevronRight className="h-3.5 w-3.5 text-[#2B579A]" />
               )}
             </div>
           )}
           {node.isFolder ? (
             <>
-              <FolderIcon className="h-4 w-4 text-yellow-500 mr-2" />
-              <span className="text-gray-700">
+              <FolderIcon className="h-4 w-4 text-[#2B579A] mr-2" />
+              <span className="text-sm text-gray-700">
                 {node.name}
               </span>
             </>
           ) : (
             <>
-              <FileIcon className="h-4 w-4 text-gray-400 ml-5 mr-2" />
-              <span className="text-gray-700">
+              <FileIcon className="h-4 w-4 text-gray-400 ml-4 mr-2" />
+              <span className="text-sm text-gray-700">
                 {node.name}
               </span>
             </>
           )}
-         <div className="ml-auto opacity-0 group-hover:opacity-100 flex items-center">
+          <div className="ml-auto opacity-0 group-hover:opacity-100">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0"
+                  className="h-6 w-6 p-0 hover:bg-[#D1E3FF]"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                  <MoreHorizontal className="h-3.5 w-3.5 text-gray-500" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
                     setItemToRename({ path: currentPath, isFolder: node.isFolder });
                     setShowRenameDialog(true);
                   }}
+                  className="text-sm"
                 >
                   Rename
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-red-600"
+                  className="text-sm text-red-600"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteClick(currentPath, node.isFolder, e);
@@ -268,7 +306,7 @@ export function FileTreeView({ fileTree, userId }: { fileTree: FileNode[], userI
           </div>
         </div>
         {node.isFolder && isExpanded && (
-          <div className="border-l border-gray-200 ml-6">
+          <div>
             {node.children.map(child => renderFileTree(child, currentPath, level + 1))}
           </div>
         )}
@@ -276,82 +314,144 @@ export function FileTreeView({ fileTree, userId }: { fileTree: FileNode[], userI
     );
 }
 
-  return (
-    <div className="flex gap-4">
-      <div className="w-1/3 bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="flex flex-col h-full">
-          <div className="p-2 border-b border-gray-200">
+return (
+  <div className="flex h-[calc(100vh-4rem)] relative">
+    {/* Sidebar */}
+    <div className={`
+      ${isSidebarVisible ? 'w-72' : 'w-0'} 
+      transition-all duration-300 ease-in-out
+      bg-[#F3F3F3] border-r border-[#E1E1E1] flex flex-col
+      overflow-hidden
+      max-[500px]:z-10
+      max-[500px]:absolute max-[500px]:h-full
+      max-[500px]:left-0
+      min-[501px]:relative
+    `}>
+      <div className="p-4 border-b border-[#E1E1E1] bg-white">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+            className="h-8 w-8 p-0 hover:bg-[#E6F0FF]"
+          >
+            <ChevronLeft className="h-5 w-5 text-[#2B579A]" />
+          </Button>
+          <div>
+            <h2 className="text-lg font-semibold text-[#2B579A]">Your Files</h2>
             <p className="text-sm text-gray-500">
               Current path: {selectedPath || '/'}
             </p>
           </div>
-          <div className="flex-1 p-4 min-h-0 overflow-auto">
-            {fileTree.map(node => renderFileTree(node))}
-          </div>
-          <div className="p-4 border-t border-gray-200 flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowNewFileDialog(true)}
-              className="flex-1"
-            >
-              New File
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowNewFolderDialog(true)}
-              className="flex-1"
-            >
-              New Folder
-            </Button>
-          </div>
         </div>
       </div>
-      <div className="w-2/3">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-[500px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          </div>
-        ) : selectedFile ? (
+      
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-2">
+          {fileTree.map(node => renderFileTree(node))}
+        </div>
+      </div>
+
+      <div className="p-3 border-t border-[#E1E1E1] bg-white space-y-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowNewFileDialog(true)}
+          className="w-full bg-white hover:bg-[#F5F5F5] border-[#D1D1D1]"
+        >
+          <FileIcon className="h-4 w-4 mr-2" />
+          New File
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowNewFolderDialog(true)}
+          className="w-full bg-white hover:bg-[#F5F5F5] border-[#D1D1D1]"
+        >
+          <FolderIcon className="h-4 w-4 mr-2" />
+          New Folder
+        </Button>
+      </div>
+    </div>
+
+    {/* Content Area */}
+    <div className={`
+      bg-white
+      max-[500px]:absolute max-[500px]:inset-0
+      min-[501px]:flex-1
+    `}>
+      {!isSidebarVisible && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsSidebarVisible(true)}
+          className="absolute top-4 left-4 z-20 hover:bg-[#E6F0FF]"
+        >
+          <ChevronRight className="h-5 w-5 text-[#2B579A]" />
+        </Button>
+      )}
+
+      {isLoading ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2B579A]"></div>
+        </div>
+      ) : selectedFile ? (
+        <div className="h-full">
           <TextEditor
             content={selectedFile.content}
+            fileName={selectedFile.name}
             onSave={handleSave}
             onClose={() => setSelectedFile(null)}
-            fileName={selectedFile.name}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onUnsavedChanges={setHasUnsavedChanges}
+            onContentChange={(content, date) => {
+              setSelectedFile(prev => prev ? { ...prev, content, date } : null);
+            }}
           />
-        ) : (
-          <div className="flex items-center justify-center h-[500px] text-gray-500">
-            Select a text file to edit
-          </div>
-        )}
-      </div>
-      <NewFileDialog
-        open={showNewFileDialog}
-        onOpenChange={setShowNewFileDialog}
-        onSubmit={handleCreateFile}
-        currentPath={selectedPath}
-      />
-      <NewFolderDialog
-        open={showNewFolderDialog}
-        onOpenChange={setShowNewFolderDialog}
-        onSubmit={handleCreateFolder}
-        currentPath={selectedPath}
-      />
-      <DeleteConfirmDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={handleDelete}
-        itemName={itemToDelete?.path || ''}
-        itemType={itemToDelete?.isFolder ? 'folder' : 'file'}
-      />
-      <RenameDialog
-        open={showRenameDialog}
-        onOpenChange={setShowRenameDialog}
-        onSubmit={handleRename}
-        currentName={itemToRename?.path.split('/').pop() || ''}
-        isFolder={itemToRename?.isFolder || false}
-      />
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+          <FileIcon className="h-16 w-16 mb-4 text-gray-300" />
+          <p className="text-lg">Select a text file to edit</p>
+          <p className="text-sm mt-2">or create a new one using the sidebar</p>
+        </div>
+      )}
     </div>
-  );
+
+    {/* Keep existing dialogs */}
+    <NewFileDialog
+      open={showNewFileDialog}
+      onOpenChange={setShowNewFileDialog}
+      onSubmit={handleCreateFile}
+      currentPath={selectedPath}
+    />
+    <NewFolderDialog
+      open={showNewFolderDialog}
+      onOpenChange={setShowNewFolderDialog}
+      onSubmit={handleCreateFolder}
+      currentPath={selectedPath}
+    />
+    <DeleteConfirmDialog
+      open={showDeleteDialog}
+      onOpenChange={setShowDeleteDialog}
+      onConfirm={handleDelete}
+      itemName={itemToDelete?.path || ''}
+      itemType={itemToDelete?.isFolder ? 'folder' : 'file'}
+    />
+    <RenameDialog
+      open={showRenameDialog}
+      onOpenChange={setShowRenameDialog}
+      onSubmit={handleRename}
+      currentName={itemToRename?.path.split('/').pop() || ''}
+      isFolder={itemToRename?.isFolder || false}
+    />
+    <SaveDialog
+      open={showSaveDialog}
+      onOpenChange={setShowSaveDialog}
+      onSave={() => handleSaveDialogAction(true)}
+      onDiscard={() => handleSaveDialogAction(false)}
+      currentFileName={selectedFile?.name || ''}
+    />
+  </div>
+);
 }

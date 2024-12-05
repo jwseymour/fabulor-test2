@@ -38,28 +38,19 @@ export async function FileList({ userId }: FileListProps) {
     const data = await response.json();
     
     if (!data.files) {
-      console.error('No files data received:', data);
       return (
-        <div>
-          <h2 className="text-xl font-semibold mb-2">Your Files</h2>
+        <div className="p-4">
           <p className="text-gray-500">No files found or error loading files.</p>
         </div>
       );
     }
 
     const fileTree = buildFileTree(data.files);
-
-    return (
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Your Files</h2>
-        <FileTreeView fileTree={fileTree} userId={userId} />
-      </div>
-    );
+    return <FileTreeView fileTree={fileTree} userId={userId} />;
   } catch (error) {
     console.error('Error in FileList:', error);
     return (
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Your Files</h2>
+      <div className="p-4">
         <p className="text-red-500">Error loading files. Please try again later.</p>
       </div>
     );
