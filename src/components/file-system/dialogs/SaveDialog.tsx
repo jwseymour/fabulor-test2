@@ -20,7 +20,7 @@ export function SaveDialog({ open, onOpenChange, onSave, onDiscard, currentFileN
             variant="outline"
             onClick={onDiscard}
           >
-            Don't Save
+            Don&apos;t Save
           </Button>
           <Button
             onClick={onSave}
