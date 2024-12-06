@@ -44,7 +44,10 @@ export default async function DashboardPage() {
           </Link>
 
           {/* Stories Card */}
-          <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-200">
+          <Link 
+            href="/stories" 
+            className="group block p-6 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+          >
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-purple-50 rounded-lg">
                 <BookOpen className="h-6 w-6 text-purple-600" />
@@ -56,7 +59,7 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Profile Card */}
           <div className="p-6 bg-white rounded-lg shadow-sm border border-gray-200">

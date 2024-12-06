@@ -35,7 +35,7 @@ export default async function RootLayout({
   ? [
       { label: "Dashboard", href: "/dashboard" },
       { label: "Files", href: "/files" },
-      { label: "Stories", href: "#" },
+      { label: "Stories", href: "/stories" },
       { label: "Profile", href: "#" },
       { label: "Log Out", action: 'logout' }
     ]

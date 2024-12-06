@@ -8,9 +8,139 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// User-related models
 model User {
-  id       Int    @id @default(autoincrement())
-  username String @unique
-  email    String @unique
-  password String
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  password      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  profile       Profile?
+
+  // Stories
+  stories       Story[]
+  storyComments StoryComment[]
+
+  // Friends and requests
+  sentRequests     FriendRequest[] @relation("SentRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedRequests")
+  friendsAsUser1   Friendship[]    @relation("UserFriends1")
+  friendsAsUser2   Friendship[]    @relation("UserFriends2")
+
+  // Messages
+  sentMessages     Message[]  @relation("SentMessages")
+  receivedMessages Message[]  @relation("ReceivedMessages")
+
+  // Groups
+  ownedGroups     Group[]         @relation("GroupOwner")
+  groupMemberships GroupMember[]
+}
+
+model Profile {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id])
+  bio         String?
+  visibility  String    @default("public") // public or private
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Friend-related models
+model FriendRequest {
+  id          String    @id @default(cuid())
+  senderId    String
+  receiverId  String
+  status      String    @default("pending") // pending, accepted, rejected
+  createdAt   DateTime  @default(now())
+  sender      User      @relation("SentRequests", fields: [senderId], references: [id])
+  receiver    User      @relation("ReceivedRequests", fields: [receiverId], references: [id])
+
+  @@unique([senderId, receiverId])
+}
+
+model Friendship {
+  id        String    @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  createdAt DateTime  @default(now())
+  user1     User      @relation("UserFriends1", fields: [user1Id], references: [id])
+  user2     User      @relation("UserFriends2", fields: [user2Id], references: [id])
+
+  @@unique([user1Id, user2Id])
+}
+
+// Story-related models
+model Story {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  authorId    String
+  visibility  String    @default("private") // public, private, or shared
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  author      User      @relation(fields: [authorId], references: [id])
+  comments    StoryComment[]
+  shares      StoryShare[]
+}
+
+model StoryComment {
+  id        String    @id @default(cuid())
+  content   String
+  storyId   String
+  authorId  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  story     Story     @relation(fields: [storyId], references: [id])
+  author    User      @relation(fields: [authorId], references: [id])
+}
+
+model StoryShare {
+  id        String    @id @default(cuid())
+  storyId   String
+  sharedWith String   // userId or groupId
+  type      String    // user or group
+  createdAt DateTime  @default(now())
+  story     Story     @relation(fields: [storyId], references: [id])
+}
+
+// Messaging and group-related models
+model Message {
+  id          String    @id @default(cuid())
+  content     String
+  senderId    String
+  sharedWith  String    // userId or groupId
+  type        String    // "user" or "group"
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver    User?     @relation("ReceivedMessages", fields: [sharedWith], references: [id], map: "Message_receiverId_fkey")
+  group       Group?    @relation(fields: [sharedWith], references: [id], map: "Message_groupId_fkey")
+
+  @@index([sharedWith, type])
+}
+
+model Group {
+  id          String    @id @default(cuid())
+  name        String
+  ownerId     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  owner       User      @relation("GroupOwner", fields: [ownerId], references: [id])
+  members     GroupMember[]
+  messages    Message[]
+}
+
+model GroupMember {
+  id        String    @id @default(cuid())
+  groupId   String
+  userId    String
+  role      String    @default("member") // owner, admin, member
+  joinedAt  DateTime  @default(now())
+  group     Group     @relation(fields: [groupId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
 }
