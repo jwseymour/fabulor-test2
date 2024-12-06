@@ -35,6 +35,7 @@ model User {
   // Groups
   ownedGroups     Group[]         @relation("GroupOwner")
   groupMemberships GroupMember[]
+  groupInvites    GroupInvite[]
 }
 
 model Profile {
@@ -130,6 +131,7 @@ model Group {
   updatedAt   DateTime  @updatedAt
   owner       User      @relation("GroupOwner", fields: [ownerId], references: [id])
   members     GroupMember[]
+  invites     GroupInvite[]
   messages    Message[]
 }
 
@@ -139,6 +141,20 @@ model GroupMember {
   userId    String
   role      String    @default("member") // owner, admin, member
   joinedAt  DateTime  @default(now())
+  group     Group     @relation(fields: [groupId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+}
+
+model GroupInvite {
+  id        String    @id @default(cuid())
+  groupId   String
+  userId    String
+  status    String    @default("pending") // pending, accepted, rejected
+  createdAt DateTime  @default(now())
+  
+  // Relations
   group     Group     @relation(fields: [groupId], references: [id])
   user      User      @relation(fields: [userId], references: [id])
 
