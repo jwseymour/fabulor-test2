@@ -27,8 +27,9 @@ export default async function CommunityPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
           <GroupsList 
+            userId={session.user.id}
             groups={groups} 
-            notifications={groupInvites.length}
+            invites={groupInvites}
           />
         </div>
         <div className="space-y-6">

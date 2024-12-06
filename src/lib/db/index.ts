@@ -261,6 +261,45 @@ export async function getFriends(userId: string) {
   });
 }
 
+export async function searchFriends(query: string, userId: string) {
+  // Get all friendships for the user
+  const friendships = await prisma.friendship.findMany({
+    where: {
+      OR: [
+        { user1Id: userId },
+        { user2Id: userId },
+      ],
+    },
+    include: {
+      user1: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
+      user2: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
+    },
+  });
+
+  // Extract friends and filter by query
+  const friends = friendships.map(friendship => {
+    const friend = friendship.user1Id === userId ? friendship.user2 : friendship.user1;
+    return {
+      id: friend.id,
+      username: friend.username,
+    };
+  }).filter(friend => 
+    friend.username.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return friends;
+}
+
 // Messaging Functions
 export async function sendDirectMessage(senderId: string, receiverId: string, content: string) {
   return await prisma.message.create({

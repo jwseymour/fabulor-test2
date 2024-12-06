@@ -1,31 +1,48 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Plus, Bell } from "lucide-react";
 import Link from "next/link";
-import { getUserGroups } from "@/lib/db";
+import { GroupNotificationsDropdown } from "./GroupNotificationsDropdown";
+import { GroupInviteDialog } from "./GroupInviteDialog";
 
 interface GroupsListProps {
-  groups: Awaited<ReturnType<typeof getUserGroups>>;
-  notifications?: number;
+  userId: string;
+  groups: {
+    id: string;
+    name: string;
+    owner: {
+      username: string;
+    };
+    members: {
+      user: {
+        id: string;
+        username: string;
+      };
+    }[];
+  }[];
+  invites: {
+    id: string;
+    group: {
+      name: string;
+      owner: {
+        username: string;
+      };
+    };
+  }[];
 }
 
-export function GroupsList({ groups, notifications = 0 }: GroupsListProps) {
+export function GroupsList({ userId, groups, invites }: GroupsListProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Groups</h2>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" className="relative">
-            <Bell className="h-4 w-4" />
-            {notifications > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                {notifications}
-              </span>
-            )}
-          </Button>
-          <Button size="sm" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" /> New Group
-          </Button>
+          <GroupNotificationsDropdown 
+            invites={invites}
+            notificationCount={invites.length}
+          />
+          <GroupInviteDialog userId={userId} />
         </div>
       </div>
 
