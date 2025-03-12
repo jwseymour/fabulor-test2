@@ -1,7 +1,7 @@
 'use server'
 
 import { auth } from '@/lib/auth/auth';
-import { createGroup, searchFriends } from '@/lib/db';
+import { createGroup, searchFriends, getUserGroups } from '@/lib/db';
 
 export async function createGroupAction({ 
   name, 
@@ -19,6 +19,11 @@ export async function createGroupAction({
     return { error: 'Failed to create group' };
   }
 }
+
+export async function getUserGroupsAction(userId: string) {
+    return await getUserGroups(userId);
+  }
+  
 
 export async function searchFriendsAction(query: string, userId: string) {
   if (!query || query.length < 2) return [];

@@ -472,3 +472,98 @@ export async function getUserGroups(userId: string) {
     },
   });
 }
+
+export async function getStoryById(storyId: string) {
+  return await prisma.story.findUnique({
+    where: { id: storyId },
+    include: {
+      author: {
+        select: {
+          id: true,
+          username: true,
+        },
+      },
+      comments: {
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+      shares: {
+        include: {
+          story: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+      },
+      _count: {
+        select: {
+          comments: true,
+          shares: true,
+        },
+      },
+    },
+  });
+}
+
+export async function checkStoryAccess(storyId: string, userId?: string) {
+  if (!userId) return false;
+
+  const story = await prisma.story.findUnique({
+    where: { id: storyId },
+    include: {
+      author: {
+        select: { id: true },
+      },
+      shares: {
+        where: {
+          OR: [
+            { sharedWith: userId, type: 'user' },
+            {
+              type: 'group',
+              AND: {
+                story: {
+                  shares: {
+                    some: {
+                      type: 'group',
+                      story: {
+                        shares: {
+                          some: {
+                            sharedWith: userId,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+  });
+
+  if (!story) return false;
+
+  // User is the author
+  if (story.author.id === userId) return true;
+
+  // Story is public
+  if (story.visibility === 'public') return true;
+
+  // Story is shared with user
+  if (story.shares.length > 0) return true;
+
+  return false;
+}
