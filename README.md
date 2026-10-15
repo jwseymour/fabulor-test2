@@ -17,6 +17,17 @@ These are based on what's in the code. I haven't re-tested all of them.
 - **Dashboard.** Links to your files and stories. It's mostly static. The "Account Created" card just shows today's date, which is a bug.
 - **File space.** Each user gets a folder in an S3 bucket. You can make folders, create text files and edit them in the browser, rename and delete files and folders, and download files through signed URLs. There's a signed upload helper in `src/lib/s3/operations.ts`, but no upload button uses it.
 
+## Screenshots
+
+Taken in October 2026 on a local copy with made-up demo data (users, stories and groups I seeded by hand). The file space isn't shown because it needs a real S3 bucket.
+
+![Story viewer](docs/screenshots/01-story-view.png)
+![Stories list](docs/screenshots/02-stories-list.png)
+![Markdown editor](docs/screenshots/03-markdown-editor.png)
+![Share dialog](docs/screenshots/04-share-dialog.png)
+![Community page](docs/screenshots/05-community.png)
+![Group invite](docs/screenshots/06-group-invite.png)
+
 ## Schema only, no working UI
 
 The Prisma schema has a few models I never finished building on top of:
