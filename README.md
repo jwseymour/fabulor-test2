@@ -1,36 +1,62 @@
-# Next.js + PostgreSQL Auth Starter
+# Fabulor
 
-This is a [Next.js](https://nextjs.org/) starter kit that uses [NextAuth.js](https://next-auth.js.org/) for simple email + password login, [Prisma](https://www.prisma.io/) as the ORM, and a [Neon Postgres](https://vercel.com/postgres) database to persist the data.
+Fabulor is a web app for writing stories and sharing them with friends and groups.
 
-## Deploy Your Own
+I worked on it from September 2024 to December 2024 and last touched it in March 2025. **It is unfinished.** Parts of it work, parts are half built, and I never wrote any tests. It builds now, but I haven't checked that it runs end to end against a database and S3.
 
-You can clone & deploy it to Vercel with one click:
+## What's in it
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?demo-title=Next.js%20Prisma%20PostgreSQL%20Auth%20Starter&demo-description=Simple%20Next.js%2013%20starter%20kit%20that%20uses%20Next-Auth%20for%20auth%20and%20Prisma%20PostgreSQL%20as%20a%20database.&demo-url=https%3A%2F%2Fnextjs-postgres-auth.vercel.app%2F&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F7rsVQ1ZBSiWe9JGO6FUeZZ%2F210cba91036ca912b2770e0bd5d6cc5d%2Fthumbnail.png&project-name=Next.js%%20Prisma%20PostgreSQL%20Auth%20Starter&repository-name=nextjs-postgres-auth-starter&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnextjs-postgres-auth-starter&from=templates&skippable-integrations=1&env=AUTH_SECRET&envDescription=Generate%20a%20random%20secret%3A&envLink=https://generate-secret.vercel.app/&stores=%5B%7B"type"%3A"postgres"%7D%5D)
+These are based on what's in the code. I haven't re-tested all of them.
 
-## Developing Locally
+- **Login and registration.** NextAuth (v5 beta) with a credentials provider. You can sign in with an email or a username. Passwords are hashed with bcrypt.
+- **Story editor.** Write stories in Markdown with `@uiw/react-md-editor`, with a preview. Stories can be created and edited.
+- **Story visibility.** Each story is private, shared, or public. Shared stories can be shared with specific users or groups. I'm not sure the group sharing access check is correct.
+- **Stories list.** Search, sort and filter by visibility.
+- **Friends.** Search for users, send friend requests, accept or reject them, see your friends list.
+- **Groups.** Create a group, invite friends, accept or reject invites, see your groups.
+- **Dashboard.** Links to your files and stories. It's mostly static. The "Account Created" card just shows today's date, which is a bug.
+- **File space.** Each user gets a folder in an S3 bucket. You can make folders, create text files and edit them in the browser, rename and delete files and folders, and download files through signed URLs. There's a signed upload helper in `src/lib/s3/operations.ts`, but no upload button uses it.
 
-You can clone & create this repo with the following command
+## Schema only, no working UI
+
+The Prisma schema has a few models I never finished building on top of:
+
+- **Comments** (`StoryComment`). The story list and viewer show a comment count, but there is no way to write or read comments.
+- **Messages** (`Message`). There are database helper functions for direct and group messages in `src/lib/db/index.ts`, but nothing calls them. No UI.
+- **Profiles** (`Profile`). The model exists. Nothing uses it. The "Profile" nav link goes nowhere.
+
+The landing page buttons and the footer links (Terms, Privacy, Contact) don't go anywhere either.
+
+## Stack
+
+Next.js 14 (App Router), TypeScript, Tailwind, shadcn/ui components, Prisma with Postgres, NextAuth, AWS S3.
+
+## Build status
+
+I did a fresh install and build in October 2026.
+
+- `prisma generate` and `next build` both work. There are three lint warnings left (hook dependencies).
+- The only build error was a type mismatch on the story edit page (shares had no `name`). I fixed it with a small lookup in that page. I didn't test editing a shared story by hand.
+- `pnpm-lock.yaml` is the lockfile. It needs pnpm 9 or newer. I removed the old `package-lock.json` because it was out of sync.
+- `npm audit` / `pnpm audit` report a lot of vulnerabilities, including in `next` and `next-auth`. I haven't upgraded anything.
+
+## Running it
+
+You need a Postgres database and an S3 bucket.
 
 ```bash
-npx create-next-app nextjs-typescript-starter --example "https://github.com/vercel/nextjs-postgres-auth-starter"
+cp .env.example .env     # fill in the values
+npx pnpm@9 install
+npx prisma migrate dev
+npm run dev
 ```
 
-## Getting Started
+Environment variables are listed in `.env.example`.
 
-First, run the development server:
+## Credits
 
-```bash
-pnpm dev
-```
+I started from Vercel's [nextjs-postgres-auth-starter](https://github.com/vercel/nextjs-postgres-auth-starter) template (the first commit says "Created from https://vercel.com/new"). That repo doesn't have a licence file, so there's no licence text to carry over. Most of what's here now is code I added on top. I also switched the ORM from Drizzle to Prisma early on.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## License
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+MIT. See [LICENSE](LICENSE).
