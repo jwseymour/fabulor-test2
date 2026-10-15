@@ -2,7 +2,7 @@
 
 Fabulor is a web app for writing stories and sharing them with friends and groups.
 
-I worked on it from September 2024 to December 2024 and last touched it in March 2025. **It is unfinished.** Parts of it work, parts are half built, and I never wrote any tests. Right now `npm run build` fails on a type error (see "Build status").
+I worked on it from September 2024 to December 2024 and last touched it in March 2025. **It is unfinished.** Parts of it work, parts are half built, and I never wrote any tests. It builds, but I haven't run it against a real database or S3 bucket since the 2024 work, and there are no tests.
 
 ## What's in it
 
@@ -33,15 +33,14 @@ Next.js 14 (App Router), TypeScript, Tailwind, shadcn/ui components, Prisma with
 
 ## Build status
 
-I tried a fresh install and build in October 2026.
+I did a fresh install and build in October 2026.
 
-- `prisma generate` works.
-- `next build` compiles but **fails the type check** in `src/app/(protected)/stories/[storyId]/edit/page.tsx`. The story editor expects each share to have a `name`, and the query doesn't return one. I haven't fixed it.
-- `package-lock.json` is out of date. `pnpm-lock.yaml` is the current one, and it needs pnpm 9 or newer.
+- `prisma generate` and `next build` both work. There are three lint warnings left (hook dependencies).
+- The only build error was a type mismatch on the story edit page (shares had no `name`). I fixed it with a small lookup in that page. I didn't test editing a shared story by hand.
+- `pnpm-lock.yaml` is the lockfile. It needs pnpm 9 or newer. I removed the old `package-lock.json` because it was out of sync.
+- `npm audit` / `pnpm audit` report a lot of vulnerabilities, including in `next` and `next-auth`. I haven't upgraded anything.
 
 ## Running it
-
-This is how it's meant to work, but see above. It won't build until the type error is fixed.
 
 You need a Postgres database and an S3 bucket.
 
