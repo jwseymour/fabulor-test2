@@ -27,7 +27,7 @@ export default async function StoryPage({
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="bg-red-50 text-red-600 p-4 rounded-lg">
-          You don't have permission to view this story.
+          You don&apos;t have permission to view this story.
         </div>
       </div>
     );
