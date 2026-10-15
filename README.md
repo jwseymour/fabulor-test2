@@ -2,7 +2,7 @@
 
 Fabulor is a web app for writing stories and sharing them with friends and groups.
 
-I worked on it from September 2024 to December 2024 and last touched it in March 2025. **It is unfinished.** Parts of it work, parts are half built, and I never wrote any tests. It builds, but I haven't run it against a real database or S3 bucket since the 2024 work, and there are no tests.
+I worked on it from September 2024 to December 2024 and last touched it in March 2025. **It is unfinished.** Parts of it work, parts are half built, and I never wrote any tests. It builds now, but I haven't checked that it runs end to end against a database and S3.
 
 ## What's in it
 
